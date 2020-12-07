@@ -1,1 +1,1 @@
-# ml_thoughts
+# Machine Learning Thoughts
