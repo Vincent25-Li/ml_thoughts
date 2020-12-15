@@ -82,6 +82,7 @@ def fit_model_per_batch(model, optimizer, scheduler, train_loader, dev_loader, d
                 log_p = model(segment_ids, attention_masks)
                 ys = ys.to(device)
                 loss = F.nll_loss(log_p, ys) / args.batch_multiplier
+                loss_val = loss.item()
 
                 # Backward
                 loss.backward()
@@ -92,8 +93,8 @@ def fit_model_per_batch(model, optimizer, scheduler, train_loader, dev_loader, d
                 # Log info
                 step += batch_size
                 pbar.update(batch_size)
-                pbar.set_postfix(epoch=epoch, NLL=nll_meter.sum)
-                tbx.add_scalar('train/NLL', nll_meter.sum, step)
+                pbar.set_postfix(epoch=epoch, NLL=loss_val)
+                tbx.add_scalar('train/NLL', loss_val, step)
                 tbx.add_scalar('train/LR_ft', optimizer.param_groups[0]['lr'], step)
                 tbx.add_scalar('train/LR', optimizer.param_groups[1]['lr'], step)
 
