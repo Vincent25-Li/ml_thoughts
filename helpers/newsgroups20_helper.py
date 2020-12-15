@@ -81,7 +81,7 @@ def fit_model_per_batch(model, optimizer, scheduler, train_loader, dev_loader, d
                 # Forward
                 log_p = model(segment_ids, attention_masks)
                 ys = ys.to(device)
-                loss = F.nll_loss(log_p, ys) / args.batch_multiplier
+                loss = F.nll_loss(log_p, ys)
                 loss_val = loss.item()
 
                 # Backward
