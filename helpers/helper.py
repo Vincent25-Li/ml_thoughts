@@ -1,25 +1,4 @@
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-from torchvision import datasets
-
-def get_mean_std():
-    dataset = datasets.CIFAR10('./data', train=True, download=True)
-    image_mean_accu = np.zeros(3)
-    image_std_accu = np.zeros(3)
-    total = 0
-    for data in dataset:
-        image = np.asarray(data[0]).reshape(-1, 3).astype(np.int)
-
-        image_mean_accu += image.mean(axis=0)
-        image_std_accu += np.square(image).mean(axis=0)
-        total += 1
-
-    image_means = image_mean_accu / total
-    image_stds = np.sqrt(image_std_accu / total - np.square(image_means))
-    return image_means, image_stds
+from pathlib import Path
 
 def get_save_dir(base_dir, name, id_max=100):
     """Get a unique save directory by appending the smallest positive integer
@@ -39,6 +18,28 @@ def get_save_dir(base_dir, name, id_max=100):
             return save_dir, name_uid
     raise RuntimeError('Too many save directories crewated with the same name. \
                         Delete old save directories or use another name.')
+
+def load_model(model, checkpoint_path, device, return_step=True):
+    """Load model parameters from disk.
+    Args:
+        model (torch.nn.Module): Load parameters into this model.
+        checkpoint_path (str): Path to checkpoint to load.
+        device (torch.device): Indicate the location where all tensors should be loaded.
+        return_step (bool): Also return the step at which checkpoint was saved.
+    Returns:
+        model (torch.nn.Module): Model loaded from checkpoint.
+        step (int): Step at which checkpoint was saved. Only if `return_step`.
+    """
+    ckpt_dict = torch.load(checkpoint_path, map_location=device)
+    
+    # Build model, load parameters
+    model.load_state_dict(ckpt_dict['model_state'])
+
+    if return_step:
+        step = ckpt_dict['step']
+        return model, step
+
+    return model
 
 class CheckpointSaver:
     """Class to save and load model checkpoints.
@@ -90,65 +91,25 @@ class CheckpointSaver:
         self.best_val = metric_val
         best_path = self.save_dir.joinpath('best.pth.tar')
         torch.save(ckpt_dict, best_path)
-
-class AverageMeter(object):
-"""Compute and store the average"""
+ 
+class AverageMeter:
+    """Keep track of average values over time."""
     def __init__(self):
         self.avg = 0
         self.sum = 0
         self.count = 0
 
     def reset(self):
+        """Reset meter."""
         self.__init__()
-
-    def update(self, val, n=1):
-        self.sum += val * n
-        self.count += n
+    
+    def update(self, val, num_samples=1):
+        """Update meter with new value `val`, the average of `num` samples.
+        Args:
+            val (float): Average value to update the meter with.
+            num_samples (int): Number of samples that were averaged to
+                produce `val`.
+        """
+        self.count += num_samples
+        self.sum += val * num_samples
         self.avg = self.sum / self.count
-
-def train(model, optimizer, scheduler, train_loader, eval_loader, device, tbx):
-    global step, steps_till_eval
-    for images, labels in train_loader:
-        images = images.to(device)
-        labels = labels.to(device)
-        batch_size = labels.size(0)
-        optimizer.zero_grad()
-
-        logits = model(images)
-        loss = F.cross_entropy(logits, labels)
-        loss_val = loss.item()
-        loss.backward()
-
-        optimizer.step()
-        scheduler.step()
-
-        step += batch_size
-        tbx.add_scalar('train/NLL', loss_val, step)
-        tbx.add_scalar('train/LR', optimizer.param_groups[0]['lr'], step)
-        steps_till_eval -= batch_size
-        if steps_till_eval <= 0:
-            results = evaluate(model, eval_loader, device)
-            for k, v in results.items():
-                tbx.add_scalar(f'dev/{k}', v, step)
-
-def evaluate(model, data_loader, device):
-    model.eval()
-    nll_meter = AverageMeter()
-    correct = 0
-    with torch.no_grad():
-        for images, labels in data_loader:
-            # Forward pass
-            images = images.to(device)
-            labels = labels.to(device)
-            batch_size = labels.size(0)
-
-            logits = model(images)
-            loss = F.cross_entropy(logits, labels)
-
-            # Calculate metrics
-            nll_meter.update(loss.item(), batch_sie)
-            correct += sum(labels.item()==torch.argmax(logit).item() for y, logit in zip(ys, logits))
-        acc = correct / len(data_loader.dataset)
-    model.train()
-    results = {'ACC': acc, 'NLL': nll_meter.avg}
-    return results
