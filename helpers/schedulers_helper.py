@@ -146,15 +146,15 @@ def train(model, optimizer, scheduler, train_loader, eval_loader, device, tbx, s
         scheduler.step()
 
         steps_counter.update(batch_size)
-        tbx.add_scalar('train/NLL', loss_val, step)
-        tbx.add_scalar('train/LR', optimizer.param_groups[0]['lr'], step)
+        tbx.add_scalar('train/NLL', loss_val, steps_counter.step)
+        tbx.add_scalar('train/LR', optimizer.param_groups[0]['lr'], steps_counter.step)
         
         if steps_counter.steps_till_eval <= 0:
             results = evaluate(model, eval_loader, device)
             if saver.is_best(results[metric]):
-                saver.save(step, model, results[metric], device)
+                saver.save(steps_counter.step, model, results[metric], device)
             for k, v in results.items():
-                tbx.add_scalar(f'dev/{k}', v, step)
+                tbx.add_scalar(f'dev/{k}', v, steps_counter.step)
             steps_counter.reset()
 
 def evaluate(model, data_loader, device):
