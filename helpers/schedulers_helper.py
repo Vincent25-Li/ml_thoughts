@@ -114,8 +114,23 @@ class AverageMeter:
         self.sum += val * num_samples
         self.avg = self.sum / self.count
 
-def train(model, optimizer, scheduler, train_loader, eval_loader, device, tbx, saver, metric='ACC'):
-    global step, steps_till_eval
+class StepsCounter:
+    """Track the steps and steps till evaluation while training"""
+    def __init__(self, eval_steps, step=0):
+        self.step = step
+        self.eval_steps = eval_steps
+        self.reset()
+
+    def update(self, batch_size):
+        """Update steps and steps till evaluation"""
+        self.step += batch_size
+        self.steps_till_eval -= batch_size
+
+    def reset(self):
+        """Reset the steps_till_eval"""
+        self.steps_till_eval = self.eval_steps
+
+def train(model, optimizer, scheduler, train_loader, eval_loader, device, tbx, saver, steps_counter, metric='ACC'):
     for images, labels in train_loader:
         images = images.to(device)
         labels = labels.to(device)
@@ -130,16 +145,17 @@ def train(model, optimizer, scheduler, train_loader, eval_loader, device, tbx, s
         optimizer.step()
         scheduler.step()
 
-        step += batch_size
+        steps_counter.update(batch_size)
         tbx.add_scalar('train/NLL', loss_val, step)
         tbx.add_scalar('train/LR', optimizer.param_groups[0]['lr'], step)
-        steps_till_eval -= batch_size
-        if steps_till_eval <= 0:
+        
+        if steps_counter.steps_till_eval <= 0:
             results = evaluate(model, eval_loader, device)
             if saver.is_best(results[metric]):
                 saver.save(step, model, results[metric], device)
             for k, v in results.items():
                 tbx.add_scalar(f'dev/{k}', v, step)
+            steps_counter.reset()
 
 def evaluate(model, data_loader, device):
     model.eval()
@@ -156,7 +172,7 @@ def evaluate(model, data_loader, device):
             loss = F.cross_entropy(logits, labels)
 
             # Calculate metrics
-            nll_meter.update(loss.item(), batch_sie)
+            nll_meter.update(loss.item(), batch_size)
             correct += sum(labels.item()==torch.argmax(logit).item() for y, logit in zip(ys, logits))
         acc = correct / len(data_loader.dataset)
     model.train()
