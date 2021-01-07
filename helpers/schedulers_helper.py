@@ -173,7 +173,7 @@ def evaluate(model, data_loader, device):
 
             # Calculate metrics
             nll_meter.update(loss.item(), batch_size)
-            correct += sum(labels.item()==torch.argmax(logit).item() for y, logit in zip(ys, logits))
+            correct += sum(label.item()==torch.argmax(logit).item() for label, logit in zip(labels, logits))
         acc = correct / len(data_loader.dataset)
     model.train()
     results = {'ACC': acc, 'NLL': nll_meter.avg}
