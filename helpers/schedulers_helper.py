@@ -91,22 +91,29 @@ class CheckpointSaver:
         best_path = self.save_dir.joinpath('best.pth.tar')
         torch.save(ckpt_dict, best_path)
 
-class AverageMeter(object):
-"""Compute and store the average"""
+class AverageMeter:
+    """Keep track of average values over time."""
     def __init__(self):
         self.avg = 0
         self.sum = 0
         self.count = 0
 
     def reset(self):
+        """Reset meter."""
         self.__init__()
-
-    def update(self, val, n=1):
-        self.sum += val * n
-        self.count += n
+    
+    def update(self, val, num_samples=1):
+        """Update meter with new value `val`, the average of `num` samples.
+        Args:
+            val (float): Average value to update the meter with.
+            num_samples (int): Number of samples that were averaged to
+                produce `val`.
+        """
+        self.count += num_samples
+        self.sum += val * num_samples
         self.avg = self.sum / self.count
-
-def train(model, optimizer, scheduler, train_loader, eval_loader, device, tbx):
+        
+def train(model, optimizer, scheduler, train_loader, eval_loader, device, tbx, saver, metric='ACC'):
     global step, steps_till_eval
     for images, labels in train_loader:
         images = images.to(device)
@@ -128,6 +135,8 @@ def train(model, optimizer, scheduler, train_loader, eval_loader, device, tbx):
         steps_till_eval -= batch_size
         if steps_till_eval <= 0:
             results = evaluate(model, eval_loader, device)
+            if saver.is_best(results[metric]):
+                saver.save(step, model, results[metric], device)
             for k, v in results.items():
                 tbx.add_scalar(f'dev/{k}', v, step)
 
