@@ -1,0 +1,32 @@
+version: "3.9"  # optional since v1.27.0
+services:
+  tensorboard:
+    image: tensorboard
+    build:
+      context: .
+      dockerfile: Dockerfile.tensorboard
+    container_name: tensorboard
+    ports:
+      - ${TENSORBOARD_PORT}:${TENSORBOARD_PORT}
+    volumes:
+      - ${SAVE_DIR}:/save
+    command:
+      ["tensorboard",
+      "--logdir=${SAVE_DIR}",
+      "--port=${TENSORBOARD_PORT}"]
+  jupyterlab:
+    image: jupyterlab:machine-learning
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyterlab
+      device_requests:
+        - capabilities:
+          - "gpu"
+    container_name: jupyterlab
+    ports:
+      - ${JUPYTERLAB_PORT}:${JUPYTERLAB_PORT}
+    volumes:
+      - ${SAVE_DIR}:/save
+    command:
+      ["jupyterlab",
+      "--port=${JUPYTERLAB_PORT}"]

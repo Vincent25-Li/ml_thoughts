@@ -1,0 +1,4 @@
+FROM pytorch/pytorch:latest
+COPY . /src
+RUM pip3 install -r requirements.txt
+# CMD ["jupyterlab", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--allow-root"]
