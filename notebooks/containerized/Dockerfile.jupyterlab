@@ -16,3 +16,4 @@ FROM jupyter-base
 RUN pip3 install \
     transformers \
     tqdm
+CMD ["jupyterlab" "--port=8888"]

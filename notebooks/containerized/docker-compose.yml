@@ -19,10 +19,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.jupyterlab
-      device_requests:
-        - capabilities:
-          - "gpu"
     container_name: jupyterlab
+    device_requests:
+      - capabilities:
+        - "gpu"
+    env_file: .env
     ports:
       - ${JUPYTERLAB_PORT}:${JUPYTERLAB_PORT}
     volumes:
