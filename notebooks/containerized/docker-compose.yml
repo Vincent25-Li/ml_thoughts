@@ -12,18 +12,19 @@ services:
       - ${SAVE_DIR}:/save
     command:
       ["tensorboard",
-      "--logdir=${SAVE_DIR}",
-      "--port=${TENSORBOARD_PORT}"]
+      "--logdir=/save",
+      "--port=${TENSORBOARD_PORT}",
+      "--bind_all"]
   jupyterlab:
     image: jupyterlab:machine-learning
     build:
       context: .
       dockerfile: Dockerfile.jupyterlab
     container_name: jupyterlab
-    device_requests:
-      - capabilities:
-        - "gpu"
-    env_file: .env
+    # device_requests:
+    #   - capabilities:
+    #     - "gpu"
+    # env_file: .env
     ports:
       - ${JUPYTERLAB_PORT}:${JUPYTERLAB_PORT}
     volumes:
