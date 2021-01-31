@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.1.1-runtime AS jupyter-base
+FROM nvidia/cuda:10.2-runtime AS jupyter-base
 RUN apt update && apt install -y --no-install-recommends  \
     git \
     build-essential \
@@ -16,4 +16,4 @@ FROM jupyter-base
 RUN pip3 install \
     transformers \
     tqdm
-CMD ["jupyterlab" "--port=8888"]
+CMD ["jupyter-lab" "--port=8888" "--ip=0.0.0.0" "--allow-root" "--no-browser"]

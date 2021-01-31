@@ -21,14 +21,15 @@ services:
       context: .
       dockerfile: Dockerfile.jupyterlab
     container_name: jupyterlab
-    # device_requests:
-    #   - capabilities:
-    #     - "gpu"
-    # env_file: .env
     ports:
       - ${JUPYTERLAB_PORT}:${JUPYTERLAB_PORT}
     volumes:
       - ${SAVE_DIR}:/save
+    runtime: nvidia
+    # gpus: all
     command:
-      ["jupyterlab",
-      "--port=${JUPYTERLAB_PORT}"]
+      ["jupyter-lab",
+      "--port=${JUPYTERLAB_PORT}",
+      "--ip=0.0.0.0",
+      "--allow-root",
+      "--no-browser"]
