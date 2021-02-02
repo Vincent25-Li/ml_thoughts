@@ -26,7 +26,6 @@ services:
     volumes:
       - ${SAVE_DIR}:/save
     runtime: nvidia
-    # gpus: all
     command:
       ["jupyter-lab",
       "--port=${JUPYTERLAB_PORT}",

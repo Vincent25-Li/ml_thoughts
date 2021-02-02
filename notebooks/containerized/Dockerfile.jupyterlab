@@ -16,4 +16,5 @@ FROM jupyter-base
 RUN pip3 install \
     transformers \
     tqdm
+COPY containerized.ipynb /
 CMD ["jupyter-lab" "--port=8888" "--ip=0.0.0.0" "--allow-root" "--no-browser"]
