@@ -1,3 +1,5 @@
+import torch
+
 from pathlib import Path
 
 def get_save_dir(base_dir, name, id_max=100):
